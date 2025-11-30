@@ -5,17 +5,22 @@
 #ifndef NEWICKCPP_NODE_H
 #define NEWICKCPP_NODE_H
 #include <string>
+#include <vector>
 
 
 class Node {
-    public:
+    std::vector<Node> children { std::vector<Node>() };
+
+public:
     std::string name;
-    float branch_length;
+    std::string branch_length;
     Node* parent {nullptr};
-    explicit Node(std::string name, float branch_length, Node* parent);
+    explicit Node(std::string name, std::string branch_length, Node* parent);
     ~Node();                            // destructor
     Node(const Node&);             // copy constructor
     Node& operator=(const Node &); // assignment
+    double branch_length_as_float();
+    void add_child(Node child);
 };
 
 

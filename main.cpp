@@ -12,29 +12,8 @@ int main(int /*argc*/, char** argv) {
 
     std::cout << argv[1] << std::endl;
 
-    const Node root { parse(util) };
-    assert(root.name == "root");
-
-    for (unsigned long i = 0; i < util.size(); i++) {
-        switch (util[i]) {
-            case '#':
-                std::cout << "hash: " << util[i];
-                break;
-            case '<':
-                std::cout << "lt: " << util[i];
-                break;
-            case '>':
-                std::cout << "gt: " << util[i];
-                break;
-            default:
-                std::cout << util[i];
-        }
-
-        if (i > 20) {
-            break;
-        }
-    }
-    std::cout << std::endl;
+    std::string newick { "(anode:1.45,bnode:23.4)cnode:2.3" };
+    parse(std::vector<char>(newick.begin(), newick.end()));
 
     return 0;
 }

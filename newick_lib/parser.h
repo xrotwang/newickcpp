@@ -34,6 +34,7 @@ public:
     explicit NewickString(const std::string &string);
     Node to_node();
     int get_min_level();
+    std::vector<NewickString> get_descendants();
 };
 
 Node parse(std::vector<char> characters);
