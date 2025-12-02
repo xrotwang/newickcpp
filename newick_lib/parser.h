@@ -30,13 +30,13 @@ public:
     std::vector<Token> tokens;
 
     explicit NewickString(std::vector<char> characters);
-    explicit NewickString(std::vector<Token> tokens);
+    explicit NewickString(const std::vector<Token> &tokens);
     explicit NewickString(const std::string &string);
-    Node to_node();
-    int get_min_level();
-    std::vector<NewickString> get_descendants();
+    Node* to_node();
+    [[nodiscard]] int get_min_level() const;
+    [[nodiscard]] std::vector<NewickString> get_descendants() const;
 };
 
-Node parse(std::vector<char> characters);
+Node* parse(std::vector<char> characters);
 
 #endif //NEWICK_PARSER_H

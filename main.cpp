@@ -12,8 +12,12 @@ int main(int /*argc*/, char** argv) {
 
     std::cout << argv[1] << std::endl;
 
-    std::string newick { "(anode:1.45,bnode:23.4)cnode:2.3" };
-    parse(std::vector<char>(newick.begin(), newick.end()));
-
+    std::string newick { "((u,v,w,x,y,z)anode:1.45,(((xxx)zz,yyy)xx,yy)bnode:23.4)cnode:2.3" };
+    Node* root { parse(std::vector<char>(newick.begin(), newick.end())) };
+    root->visit();
+    root->remove_redundant_nodes();
+    root->visit();
+    root->resolve_polytomies();  // now we have binary tree!
+    root->visit();
     return 0;
 }

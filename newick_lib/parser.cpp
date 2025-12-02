@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <ostream>
+#include <utility>
 #include <vector>
 
 #include "node.h"
@@ -27,32 +28,32 @@ NewickString::NewickString(std::vector<char> characters)
                 // FIXME: recognize or raise exception
                 break;
             case ',':
-                tokens.push_back(Token(character, TokenType::COMMA, level));
+                tokens.emplace_back(character, TokenType::COMMA, level);
                 break;
             case ':':
-                tokens.push_back(Token(character, TokenType::COLON, level));
+                tokens.emplace_back(character, TokenType::COLON, level);
                 break;
             case '(':  // Braces have the level of the outer scope.
-                tokens.push_back(Token(character, TokenType::OBRACE, level));
+                tokens.emplace_back(character, TokenType::OBRACE, level);
                 level++;
                 break;
             case ')':
                 level--;
                 assert(level >= 0);
-                tokens.push_back(Token(character, TokenType::CBRACE, level));
+                tokens.emplace_back(character, TokenType::CBRACE, level);
                 break;
             default:
-                tokens.push_back(Token(character, TokenType::CHAR, level));
+                tokens.emplace_back(character, TokenType::CHAR, level);
         }
     }
 };
 
 // We can instantiate NewickString from (subsets of) tokens.
-NewickString::NewickString(std::vector<Token> tokens_)
+NewickString::NewickString(const std::vector<Token> &tokens_)
     : tokens { std::vector<Token>() }
 {
-    for (unsigned long i = 0; i < tokens_.size(); i++) {
-        tokens.push_back(tokens_[i]);
+    for (auto token : tokens_) {
+        tokens.push_back(token);
     }
     min_level = tokens[0].level;
 };
@@ -64,7 +65,7 @@ NewickString::NewickString(const std::string &string)
     tokens = NewickString(std::vector<char>(string.begin(), string.end())).tokens;
 };
 
-Node NewickString::to_node() {
+Node* NewickString::to_node() {
     std::vector<Token> root_tokens { std::vector<Token>() };
 
     // Parse root name and length.
@@ -99,54 +100,44 @@ Node NewickString::to_node() {
         }
     }
 
-    Node root { Node(name, length, nullptr) };
+    Node *ntmp;
+    ntmp = new Node(name, length);
     std::vector<NewickString> descendants { get_descendants() };
     for (unsigned long i = 0; i < descendants.size(); i++) {
-        root.add_child(descendants[i].to_node());
+        Node* child = descendants[i].to_node();
+        ntmp->add_child(child);
     }
-    return root;
+    return ntmp;
 };
 
-/*     def iter_descendants(self) -> typing.Generator['NewickString', None, None]:
-        tokens, comma = [], False
-        for t in self:
-            if t.type == TokenType.COMMA and t.level == self.minlevel + 1:
-                comma = True
-                yield NewickString(tokens)
-                tokens = []
-            elif t.level > self.minlevel:
-                tokens.append(t)
-        if comma or tokens:
-            yield NewickString(tokens)
-*/
-std::vector<NewickString> NewickString::get_descendants() {
+
+std::vector<NewickString> NewickString::get_descendants() const {
     std::vector<NewickString> descendants { std::vector<NewickString>() };
     std::vector<Token> descendant_tokens { std::vector<Token>() };
     bool comma { false };
 
-    for (unsigned long i = 0; i < tokens.size(); i++) {
-        Token token = tokens[i];
+    for (auto token : tokens) {
         if (token.type == TokenType::COMMA && token.level == min_level + 1) {
             comma = true;
-            descendants.push_back(NewickString(descendant_tokens));
+            descendants.emplace_back(descendant_tokens);
             descendant_tokens = std::vector<Token>();
         } else if (token.level > min_level) {
-            descendant_tokens.push_back(Token(token.character, token.type, token.level));
+            descendant_tokens.emplace_back(token.character, token.type, token.level);
         }
     }
-    if (comma || descendant_tokens.size() > 0) {
-        descendants.push_back(NewickString(descendant_tokens));
+    if (comma || !descendant_tokens.empty()) {
+        descendants.emplace_back(descendant_tokens);
     }
     return descendants;
 }
 
 
 
-int NewickString::get_min_level() {
+int NewickString::get_min_level() const {
     return min_level;
 }
 
 
-Node parse(std::vector<char> characters) {
-    return NewickString(characters).to_node();
+Node* parse(std::vector<char> characters) {
+    return NewickString(std::move(characters)).to_node();
 }

@@ -16,3 +16,15 @@ TEST_CASE("dunno2", "[category?]"){  // 12/2/2020 -> 737761
 TEST_CASE("read_file_test", "[catefory?]") {
     CHECK(read_file("NodeTest.cpp")[0] == '/');
 }
+
+/*
+ * postorder test:
+ *
+Input:
+     1
+   / | \
+  3  2  4
+ / \
+5   6
+Output: [5, 6, 3, 2, 4, 1]
+ */
