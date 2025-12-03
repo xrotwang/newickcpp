@@ -1,10 +1,9 @@
+#include <functional>
 #include <iostream>
 #include <stack>
 #include <utility>
 
 #include "node.h"
-
-#include <functional>
 
 
 Node::Node(std::string name, std::string branch_length)
@@ -127,33 +126,12 @@ Node* Node::resolve_polytomies() {
 }
 
 /*
- * FIXME: implement remove_redundant_nodes
-*         for n in self.walk(mode='postorder'):
-            while n.ancestor and len(n.ancestor.descendants) == 1:
-                grandfather = n.ancestor.ancestor
-                father = n.ancestor
-                if preserve_lengths:
-                    n.length += father.length
-                if keep_leaf_name:
-                    father.name = n.name
-
-                if grandfather:
-                    for i, child in enumerate(grandfather.descendants):
-                        if child is father:
-                            del grandfather.descendants[i]
-                    grandfather.add_descendant(n)
-                    father.ancestor = None
-                else:
-                    self.descendants = n.descendants
-                    if preserve_lengths:
-                        self.length = n.length
-
+ * Remove redundant nodes.
  */
 void Node::remove_redundant_nodes() {
     for (auto &n: this->postorder_traversal()) {
         if (n->children.size() == 1) {
             Node* child = n->children[0];
-            std::cout << n->name << std::endl;
             // Replace the only child with the grandchildren (if any).
             // Adapt branch_lengths. Adapt name.
             // delete the only child.
@@ -166,4 +144,44 @@ void Node::remove_redundant_nodes() {
             delete child;
         };
     }
+}
+
+/*
+
+ */
+std::string Node::to_newick(int level) const {
+    std::string newick { std::string("") };
+    if (!this->children.empty()) {
+        newick.append("(");
+        for (auto &n: this->children) {
+            if (newick.back() != '(') {
+                newick.append(",");
+            }
+            newick.append(n->to_newick(level + 1));
+        }
+        newick.append(")");
+    }
+    newick.append(this->name);
+    if (this->branch_length != "") {
+        newick.append(":");
+        newick.append(this->branch_length);
+    }
+    if (level == 0) {
+        newick.append(";");
+    }
+    return newick;
+}
+
+
+std::string Node::ascii_art() const {
+    std::vector<std::string> lines { "" };
+    //auto largest = std::max_element(words.begin(), words.end(), [](const auto& s1, const auto& s2){
+    //      return s1.size() < s2.size();
+    //    });
+    std::string res { "" };
+    for (auto &s: lines) {
+        res.append(s);
+        res.append("\n");
+    }
+    return res;
 }

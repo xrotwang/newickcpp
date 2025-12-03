@@ -4,10 +4,6 @@
 #include <vector>
 
 
-int mult(int a, int b) {
-    return a * b;
-}
-
 /*
  * Read file into vector of characters.
  */

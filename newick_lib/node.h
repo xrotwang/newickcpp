@@ -19,6 +19,8 @@ public:
     std::vector<Node*> postorder_traversal();
     Node* resolve_polytomies();
     void remove_redundant_nodes();
+    std::string to_newick(int level=0) const;
+    std::string ascii_art() const;
 };
 
 

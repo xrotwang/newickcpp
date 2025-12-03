@@ -1,14 +1,16 @@
 #include <algorithm>
 #include <cassert>
-#include <iostream>
-#include <ostream>
 #include <utility>
 #include <vector>
 
 #include "node.h"
 #include "parser.h"
 
+#include <iostream>
+#include <ostream>
 
+
+// FIXME: turn into struct?
 Token::Token(char character, TokenType type, int level)
     : character {character}, type {type}, level {level}
 {
@@ -87,8 +89,7 @@ Node* NewickString::to_node() {
     std::string name { "" };
     std::string length { "" };
     bool in_name { true };
-    for (unsigned long i = 0; i < root_tokens.size(); i++) {
-        Token token = root_tokens[i];
+    for (auto token : root_tokens) {
         if (token.type == TokenType::COLON) {
             in_name = false;
             continue;
@@ -103,8 +104,8 @@ Node* NewickString::to_node() {
     Node *ntmp;
     ntmp = new Node(name, length);
     std::vector<NewickString> descendants { get_descendants() };
-    for (unsigned long i = 0; i < descendants.size(); i++) {
-        Node* child = descendants[i].to_node();
+    for (auto & descendant : descendants) {
+        Node* child = descendant.to_node();
         ntmp->add_child(child);
     }
     return ntmp;
