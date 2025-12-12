@@ -5,11 +5,11 @@
 
 
 class Node {
-    std::vector<Node*> children { std::vector<Node*>() };
 
 public:
     std::string name;
     std::string branch_length;
+    std::vector<Node*> children { std::vector<Node*>() };
     explicit Node(std::string name, std::string branch_length);
     ~Node();                            // destructor
     Node(const Node&);             // copy constructor
@@ -20,7 +20,7 @@ public:
     Node* resolve_polytomies();
     void remove_redundant_nodes();
     std::string to_newick(int level=0) const;
-    std::string ascii_art() const;
+    std::vector<std::string> ascii_art(const std::string &char1="\u2500", unsigned long maxlen=0);
 };
 
 

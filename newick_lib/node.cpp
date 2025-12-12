@@ -1,5 +1,5 @@
-#include <functional>
 #include <iostream>
+#include <regex>
 #include <stack>
 #include <utility>
 
@@ -173,15 +173,102 @@ std::string Node::to_newick(int level) const {
 }
 
 
-std::string Node::ascii_art() const {
-    std::vector<std::string> lines { "" };
-    //auto largest = std::max_element(words.begin(), words.end(), [](const auto& s1, const auto& s2){
-    //      return s1.size() < s2.size();
-    //    });
-    std::string res { "" };
-    for (auto &s: lines) {
-        res.append(s);
-        res.append("\n");
+std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long maxlen) {
+    if (maxlen == 0) {  // Determine the maximal length of a node label.
+        std::vector<Node*> nodes {this->postorder_traversal()};
+        auto maxnode = std::max_element(
+            nodes.begin(),
+            nodes.end(),
+            [](const auto& s1, const auto& s2){return s1->name.size() < s2->name.size();}
+            );
+        if (maxnode != nodes.end()) {
+            maxlen = (*maxnode)->name.size();
+        }
     }
-    return res;
-}
+    std::string pad {std::string(maxlen, ' ')};
+    std::string pad_minus_1 {std::string(maxlen - 1, ' ')};
+
+    if (!this->children.empty()) {
+        auto result {std::vector<std::string>()};  // accumulated lines of all child nodes.
+
+        for (unsigned int i = 0; i < this->children.size(); i++) {
+            std::string char2;
+            if (this->children.size() == 1) {  // only one child
+                char2 = "\u2500";
+            } else if (i == 0) {  // first child of several
+                char2 = "\u250c";
+            } else if (i == this->children.size() - 1) {  // last child of several
+                char2 = "\u2514";
+            } else {  // an intermediate child
+                char2 = "\u2500";
+            }
+            std::vector<std::string> res { this->children[i]->ascii_art(char2, maxlen) };
+            result.reserve(result.size() + res.size());
+            result.insert(result.end(),res.begin(),res.end());
+            result.emplace_back("\u2502");  // add a line starting with a pipe to space nodes vertically.
+        }
+        result.pop_back();  // remove the added line after the last child.
+        int end {static_cast<int>(result.size())};
+        int lo {0};  // The index of the line of the first immediate child
+        int hi {0};  // The index of the line of the last immediate child
+        int mid {0}; // The index of the line where to attach the parent node
+
+        // find lo and hi as index of the line that starts with "\u250c" and "\u2514" respectively.
+        for (int i {0}; i < end; i++) {
+            //std::cout << result[static_cast<unsigned long>(i)] << std::endl;
+            if (result[static_cast<unsigned long>(i)].rfind("\u250c", 0) == 0) {
+                lo = i;
+            } else if (result[static_cast<unsigned long>(i)].rfind("\u2514", 0) == 0) {
+                hi = i;
+                break;
+            } else if (result[static_cast<unsigned long>(i)].rfind("\u2500", 0) == 0) {
+                // If there's only one child, we determine it by the leading "\u2500"
+                mid = i;
+            }
+        }
+
+        if (hi != 0) {  // More than one child, attach the parent centered.
+            mid = lo + ((hi - lo) / 2);
+        }
+        std::vector<std::string> lines {std::vector<std::string>()};
+        // loop over result by index; compute prefix; prepend prefix.
+        for (int i {0}; i < end; i++) {
+            std::string prefix {""};
+            std::string line {result[static_cast<unsigned long>(i)]};
+
+            if (i == mid) {
+                prefix = char1 + this->name + std::string(maxlen - (this->name.size() + 1), '-');
+                if (line.rfind(pad + "\u2502", 0) == 0) {
+                    // The tree has more than one nesting level.
+                    prefix += "\u2502";
+                    line.erase(0, 1);
+                } else if (line.rfind("\u2500", 0) == 0) {
+                    line.erase(0, 3);
+                    line = "\u253c" + line;  // FIXME: Problem if there's only one child!
+                }
+            } else if (char1 != "\u2500" && i > lo && i < hi) {
+                prefix = "\u2502" + pad_minus_1;
+            } else if ((char1 == "\u2514") && i < mid) {
+                // Before the last child
+                prefix = "\u2502" + pad_minus_1;
+            } else if ((char1 == "\u250c") && i > mid) {
+                // After the first child
+                prefix = "\u2502" + pad_minus_1;
+            } else if (i > lo && i < hi && line.rfind("\u2500", 0) == 0) {
+                // An intermediate child node.
+                prefix = pad + "\u251c";
+                line.erase(0, 3);
+            } else if (i > lo && i < hi && line.rfind("\u2502", 0) != 0) {
+                prefix = pad + "\u2502";
+                line.erase(0, 1);
+            } else {
+                prefix = pad;
+            }
+            lines.emplace_back(prefix + line);
+        }
+        return lines;
+    }
+    std::vector<std::string> lines {std::vector<std::string>()};
+    lines.emplace_back(char1 + this->name);
+    return lines;
+};

@@ -40,5 +40,11 @@ int main(int argc, char **argv) {
         }
 
     }
+
+    tree = NewickString("(((z,zz)a,(x,(e,fffff)y)bb,ccc)dd)R;").to_node();
+    std::vector<std::string> lines {tree->ascii_art()};
+    for (const auto & line : lines) {
+        std::cout << line << std::endl;
+    }
     return 0;
 }
