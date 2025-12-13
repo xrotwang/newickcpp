@@ -1,4 +1,3 @@
-#include <iostream>
 #include <regex>
 #include <set>
 #include <stack>
@@ -22,29 +21,23 @@ Node::Node(const Node &N)
 double Node::branch_length_as_float() const {
     if (!branch_length.empty()) {
         return std::stod(branch_length);
-    } else {
-        return 0.0;
     }
+    return 0.0;
 }
 
 void Node::add_child(Node *child) {
     (this->children).push_back(child);
 }
 
-void Node::visit(int level) const {
-    for (int i = 0; i < level; i++) {
-        if (i + 1 < level) {
-            std::cout << "  ";
-        } else {
-            std::cout << "|-";
-        }
-    }
-    std::cout << name << " : " << branch_length << " children: " << children.size() << std::endl;
+/*
+ * Visit each node in a tree, possibly mutating it.
+ */
+void Node::visit(std::function<void(Node*)> visitor, int level) {
+    visitor(this);
     for (auto &i: children) {
-        i->visit(level + 1);
+        i->visit(visitor, level + 1);
     }
 }
-
 
 class Pair {
 public:
@@ -148,7 +141,7 @@ void Node::remove_redundant_nodes() {
 }
 
 /*
-
+ * Format the tree as Newick string.
  */
 std::string Node::to_newick(int level) const {
     std::string newick { std::string("") };
@@ -163,7 +156,7 @@ std::string Node::to_newick(int level) const {
         newick.append(")");
     }
     newick.append(this->name);
-    if (this->branch_length != "") {
+    if (!this->branch_length.empty()) {
         newick.append(":");
         newick.append(this->branch_length);
     }
@@ -176,6 +169,9 @@ std::string Node::to_newick(int level) const {
 
 std::string dashes(unsigned long n) {
     std::string res {""};
+    if (n <= 0) {
+        return res;
+    }
     for (unsigned long i = 0; i < n; i++) {
         res += "\u2500";
     }
@@ -229,13 +225,12 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
                 lo = i;
             } else if (result[static_cast<unsigned long>(i)].rfind("\u2514", 0) == 0) {
                 hi = i;
-                break;
+                break;  // If we found the last child, we're done here.
             } else if (result[static_cast<unsigned long>(i)].rfind("\u2500", 0) == 0) {
                 // If there's only one child, we determine it by the leading "\u2500"
                 mid = i;
             }
         }
-
         if (hi != 0) {  // More than one child, attach the parent centered.
             mid = lo + ((hi - lo) / 2);
         }
@@ -246,12 +241,7 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
             std::string line {result[static_cast<unsigned long>(i)]};
 
             if (i == mid) {
-                // We attach the current node as parent.
-                if (maxlen > this->name.size()) {
-                    prefix = char1 + this->name + dashes(maxlen - this->name.size()) + "\u2500";
-                } else {
-                    prefix = char1 + this->name + "\u2500";
-                }
+                prefix = char1 + this->name + dashes(maxlen - this->name.size()) + "\u2500";
                 if (line.rfind(pad + "\u2502", 0) == 0) {
                     // The tree has more than one nesting level.
                     prefix += "\u2502";

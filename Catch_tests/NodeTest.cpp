@@ -1,6 +1,9 @@
 //
 // Created by robert on 11/29/25.
 //
+#include <functional>
+#include <iostream>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "util.h"
@@ -45,17 +48,35 @@ TEST_CASE("binarise", "[regular]") {
   CHECK(node->to_newick() == "(a,(b,(c,d)))e;");
 };
 
+
+void rename_node(Node* n) {
+  if (n->name == "a") {
+    n->name = "aaa";
+  }
+};
+
+
 TEST_CASE("visit", "[regular]") {
   std::string newick { "(a:1.1,c)b" };
   Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
-  node->visit();
-  CHECK(true);
+
+  node->visit(rename_node);
+  CHECK(node->to_newick() == "(aaa:1.1,c)b;");
 };
 
 TEST_CASE("to_newick", "[regular]") {
-  std::string newick { "(a:1.1)b" };
+  std::string newick { "(a:1.1)b:1.0" };
   Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
-  CHECK(node->to_newick() == "(a:1.1)b;");
+  CHECK(node->to_newick() == "(a:1.1)b:1.0;");
+};
+
+TEST_CASE("branch_length_as_float", "[regular]") {
+  std::string newick { "(a:1.1)b:1.0" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  CHECK(node->branch_length_as_float() == 1.0);
+  newick = "(a,b)c";
+  node = parse(std::vector<char>(newick.begin(), newick.end()));
+  CHECK(node->branch_length_as_float() == 0.0);
 };
 
 TEST_CASE("print_ascii", "[regular]") {

@@ -1,5 +1,6 @@
 #ifndef NEWICKCPP_NODE_H
 #define NEWICKCPP_NODE_H
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,7 @@ public:
     Node(const Node&);             // copy constructor
     [[nodiscard]] double branch_length_as_float() const;
     void add_child(Node* child);
-    void visit(int level = 0) const;
+    void visit(std::function<void(Node*)> visitor, int level = 0);
     std::vector<Node*> postorder_traversal();
     Node* resolve_polytomies();
     void remove_redundant_nodes();
