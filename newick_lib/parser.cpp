@@ -20,7 +20,6 @@ NewickString::NewickString(std::vector<char> characters)
     min_level = 0;
     for (char character : characters) {
         switch (character) {
-            // FIXME: colon, splitting name and branch length!
             case ';':
                 //tokens.push_back(Token(character, TokenType::SEMICOLON, level));
                 // FIXME: recognize or raise exception

@@ -69,6 +69,12 @@ TEST_CASE("to_newick", "[regular]") {
   CHECK(node->to_newick() == "(a:1.1)b:1.0;");
 };
 
+TEST_CASE("remove_redundant_nodes", "[regular]") {
+  std::string newick { "((c,d)a:1.0)b:1.0" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  CHECK(node->remove_redundant_nodes()->to_newick() == "(c,d)a:2.000000;");
+};
+
 TEST_CASE("branch_length_as_float", "[regular]") {
   std::string newick { "(a:1.1)b:1.0" };
   Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };

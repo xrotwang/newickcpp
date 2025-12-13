@@ -39,7 +39,8 @@ void Node::visit(const std::function<void(Node*)>& visitor, int level) {
     }
 }
 
-class Pair {
+
+class Pair {  // Helper class for postorder traversal algorithm.
 public:
     Node *node;
     int childrenIndex;
@@ -62,6 +63,7 @@ std::vector<Node*> Node::postorder_traversal() {
 
     while (!stack.empty() || current != nullptr) {
         if (current != nullptr) {
+            // Traverse down to the leftmost leaf.
             // Push the current node and its index on the stack
             stack.push(new Pair(current, currentIndex));
             currentIndex = 0;
@@ -80,8 +82,7 @@ std::vector<Node*> Node::postorder_traversal() {
         stack.pop();
         postorderTraversal.push_back(temp->node);
 
-        // Repeatedly we will then pop all the elements from the stack till popped
-        // element is last children of top of the stack
+        // Now add siblings of the last leaf.
         while (!stack.empty() && temp->childrenIndex ==
                 static_cast<int>(stack.top()->node->children.size()) - 1)
         {
@@ -90,8 +91,7 @@ std::vector<Node*> Node::postorder_traversal() {
             postorderTraversal.push_back(temp->node);
         }
 
-        // If stack is not empty, then simply assign current to the next children
-        // of top of stack.
+        // If stack is not empty, go one level up, and continue.
         if (!stack.empty())
         {
             current = stack.top()->node->children[static_cast<unsigned>(temp->childrenIndex) + 1];
@@ -104,16 +104,18 @@ std::vector<Node*> Node::postorder_traversal() {
 
 Node* Node::resolve_polytomies() {
     Node* node {this};
-    if (this->children.size() > 2) {
+    if (this->children.size() > 2) {  // A polytomy.
+        // We insert a new node as parent for all but one child.
         node = new Node("", "");
         while (this->children.size() > 1) {
             node->add_child(this->children[this->children.size() - 1]);
             this->children.pop_back();
         }
+        // We added children from the back, so we reverse to keep the order.
         std::reverse(node->children.begin(), node->children.end());
         this->add_child(node);
     }
-    for (auto &i: this->children) {
+    for (auto &i: this->children) {  // Recurse.
         i->resolve_polytomies();
     }
     return node;
@@ -127,10 +129,13 @@ Node* Node::remove_redundant_nodes() {
         if (n->children.size() == 1) {
             Node* child = n->children[0];
             // Replace the only child with the grandchildren (if any).
-            // Adapt branch_lengths. Adapt name.
-            // delete the only child.
+            // Adapt branch_length. Adapt name. Delete the only child.
             n->name = child->name;
-            //n->branch_length : FIXME: must convert to float, add, convert back to string
+            if (!n->branch_length.empty()) {
+                double length {n->branch_length_as_float()};
+                length += child->branch_length_as_float();
+                n->branch_length = std::to_string(length);
+            }
             n->children.pop_back();
             for (auto &i: child->children) {
                 n->add_child(i);
@@ -169,7 +174,7 @@ std::string Node::to_newick(int level) const {
 
 
 std::string dashes(unsigned long n) {
-    std::string res {""};
+    std::string res;
     if (n <= 0) {
         return res;
     }
@@ -250,11 +255,11 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
                 } else if (line.rfind("\u2500", 0) == 0 && hi != 0) {
                     // a crossing - parent with odd number (>= 3) of chlidren.
                     line.erase(0, 3);
-                    line = "\u253c" + line;
+                    line.insert(0, "\u253c");
                 } else if (line.rfind("\u2502", 0) == 0) {
                     // Replace pipe with T-crossing character.
                     line.erase(0, 3);
-                    line = "\u2524" + line;
+                    line.insert(0, "\u2524");
                 }
             } else if ((char1 == "\u2514") && i < mid) {
                 // Before the last child
@@ -277,7 +282,7 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
         lines.emplace_back(char1 + this->name);
     }
     // We remove lines containing only spaces and pipes.
-    std::vector<unsigned long> indices {std::vector<unsigned long>()};
+    auto indices {std::vector<unsigned long>()};
 
     for (unsigned long i {0}; i < lines.size(); i++) {
         // Hacky way to work around the missing (simple) support for unicode in regexes.

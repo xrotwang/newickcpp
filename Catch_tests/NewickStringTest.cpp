@@ -9,7 +9,7 @@ TEST_CASE("NewickString from string", "[category?]"){
 }
 
 TEST_CASE("NewickString from tokens", "[category?]"){
-    NewickString ns { "(a,b)c" };
+    NewickString ns { "(a,b)c;" };
 
     std::vector<Token> tokens { std::vector<Token>() };
     for (auto & token : ns.tokens) {
