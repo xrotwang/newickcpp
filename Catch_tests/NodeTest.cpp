@@ -44,3 +44,25 @@ TEST_CASE("postorder", "[regular]") {
      CHECK(ponodes[i]->name == "1");
  }
 };
+
+TEST_CASE("binarise", "[regular]") {
+  std::string newick { "((a,b,c,d)e)f" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  node->remove_redundant_nodes();
+  node->resolve_polytomies();
+  CHECK(node->to_newick() == "(a,(b,(c,d)))e;");
+};
+
+TEST_CASE("print_ascii", "[regular]") {
+  std::string newick { "(a)b" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  CHECK(node->ascii_art()[0] == "─b──a");
+};
+
+TEST_CASE("print_ascii_2", "[regular]") {
+  std::string newick { "(a,b)cc" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  CHECK(node->ascii_art()[0] == "    ┌a");
+  CHECK(node->ascii_art()[1] == "─cc─┤");
+  CHECK(node->ascii_art()[2] == "    └b");
+};

@@ -13,8 +13,6 @@ enum Cmd {
 };
 
 constexpr Cmd getCmd(const std::string_view sv) {
-    // We can only switch on an integral value (or enum), not a string
-    // so we have to use if-statements here
     if (sv == "binarise") return binarise;
     if (sv == "print-ascii") return print_ascii;
     return help;
@@ -43,7 +41,7 @@ int main(int argc, char **argv) {
         std::cerr << program;
         return 1;
     }
-
+    // Read input from file, cli arg or stdin.
     std::vector<char> input;
     if (!path.empty()) {
         input = read_file(path);
@@ -59,7 +57,7 @@ int main(int argc, char **argv) {
     switch (getCmd(cmd)) {
         case binarise:
             tree->remove_redundant_nodes();
-            tree->resolve_polytomies(); // now we have binary tree!
+            tree->resolve_polytomies(); // now we have a binary tree!
             std::cout << tree->to_newick() << std::endl;
             break;
         case print_ascii:

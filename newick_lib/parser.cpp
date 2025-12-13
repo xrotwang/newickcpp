@@ -6,9 +6,6 @@
 #include "node.h"
 #include "parser.h"
 
-#include <iostream>
-#include <ostream>
-
 
 // FIXME: turn into struct?
 Token::Token(char character, TokenType type, int level)
