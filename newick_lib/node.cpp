@@ -1,11 +1,10 @@
 #include <iostream>
 #include <regex>
+#include <set>
 #include <stack>
 #include <utility>
 
 #include "node.h"
-
-#include <set>
 
 
 Node::Node(std::string name, std::string branch_length)
@@ -290,6 +289,7 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
     std::vector<unsigned long> indices {std::vector<unsigned long>()};
 
     for (unsigned long i {0}; i < lines.size(); i++) {
+        // Hacky way to work around the missing (simple) support for unicode in regexes.
         std::string non_space;
         for (char j : lines[i]) {
             if (j != ' ') {
