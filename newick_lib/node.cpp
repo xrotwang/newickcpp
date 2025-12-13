@@ -286,21 +286,23 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
     } else {
         lines.emplace_back(char1 + this->name);
     }
-    // FIXME: Compactify!
+    // We remove lines containing only spaces and pipes.
     std::vector<unsigned long> indices {std::vector<unsigned long>()};
 
     for (unsigned long i {0}; i < lines.size(); i++) {
-        std::string non_space {""};
+        std::string non_space;
         for (char j : lines[i]) {
             if (j != ' ') {
                 non_space += j;
             }
         }
-        if (non_space == "\u2502" || non_space == "\u2502\u2502" || non_space == "\u2502\u2502\u2502") {
+        if (non_space == "\u2502" || non_space == "\u2502\u2502") {
+            // More than two pipes should not have accumulated at this point, because we compactify at
+            // each recursion level.
             indices.emplace_back(i);
         }
     }
-    while (!indices.empty()) {
+    while (!indices.empty()) {  // We consume indices from back to start and erase lines accordingly.
         lines.erase(std::next(lines.begin(), static_cast<int>(indices.back())));
         indices.pop_back();
     }
