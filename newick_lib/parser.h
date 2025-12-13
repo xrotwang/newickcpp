@@ -32,7 +32,7 @@ public:
     explicit NewickString(std::vector<char> characters);
     explicit NewickString(const std::vector<Token> &tokens);
     explicit NewickString(const std::string &string);
-    Node* to_node();
+    [[nodiscard]] Node* to_node() const;
     [[nodiscard]] int get_min_level() const;
     [[nodiscard]] std::vector<NewickString> get_descendants() const;
 };

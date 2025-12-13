@@ -32,7 +32,7 @@ void Node::add_child(Node *child) {
 /*
  * Visit each node in a tree, possibly mutating it.
  */
-void Node::visit(std::function<void(Node*)> visitor, int level) {
+void Node::visit(const std::function<void(Node*)>& visitor, int level) {
     visitor(this);
     for (auto &i: children) {
         i->visit(visitor, level + 1);
@@ -122,7 +122,7 @@ Node* Node::resolve_polytomies() {
 /*
  * Remove redundant nodes.
  */
-void Node::remove_redundant_nodes() {
+Node* Node::remove_redundant_nodes() {
     for (auto &n: this->postorder_traversal()) {
         if (n->children.size() == 1) {
             Node* child = n->children[0];
@@ -138,6 +138,7 @@ void Node::remove_redundant_nodes() {
             delete child;
         };
     }
+    return this;
 }
 
 /*

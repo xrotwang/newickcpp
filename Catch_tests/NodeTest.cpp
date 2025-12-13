@@ -43,8 +43,7 @@ TEST_CASE("postorder", "[regular]") {
 TEST_CASE("binarise", "[regular]") {
   std::string newick { "((a,b,c,d)e)f" };
   Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
-  node->remove_redundant_nodes();
-  node->resolve_polytomies();
+  node->remove_redundant_nodes()->resolve_polytomies();
   CHECK(node->to_newick() == "(a,(b,(c,d)))e;");
 };
 

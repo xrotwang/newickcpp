@@ -18,8 +18,7 @@ NewickString::NewickString(std::vector<char> characters)
 {
     int level { 0 };
     min_level = 0;
-    for (unsigned long i = 0; i < characters.size(); i++) {
-        char character = characters[i];
+    for (char character : characters) {
         switch (character) {
             // FIXME: colon, splitting name and branch length!
             case ';':
@@ -64,13 +63,14 @@ NewickString::NewickString(const std::string &string)
     tokens = NewickString(std::vector<char>(string.begin(), string.end())).tokens;
 };
 
-Node* NewickString::to_node() {
+Node* NewickString::to_node() const {
     std::vector<Token> root_tokens { std::vector<Token>() };
 
-    // Parse root name and length.
+    // Parse root name and length. We traverse the tokens starting at the end, and collect everything
+    // except closing braces until we hit a higher level.
     for (unsigned long i = tokens.size(); i > 0; i--) {
         Token token = tokens[i - 1];
-        if (token.character == '\0') {
+        if (token.character == '\0') {  // Ignore zero-terminator.
             continue;
         }
         if (token.level != min_level) {
@@ -81,10 +81,10 @@ Node* NewickString::to_node() {
             root_tokens.push_back(token);
         }
     }
-    std::reverse(root_tokens.begin(), root_tokens.end());
+    std::ranges::reverse(root_tokens);
 
-    std::string name { "" };
-    std::string length { "" };
+    std::string name;
+    std::string length;
     bool in_name { true };
     for (auto token : root_tokens) {
         if (token.type == TokenType::COLON) {
@@ -98,9 +98,10 @@ Node* NewickString::to_node() {
         }
     }
 
-    Node *ntmp;
-    ntmp = new Node(name, length);
-    std::vector<NewickString> descendants { get_descendants() };
+    // Instantiate a Node ...
+    Node *ntmp = new Node(name, length);
+    // ... and add children recursively.
+    std::vector descendants { get_descendants() };
     for (auto & descendant : descendants) {
         Node* child = descendant.to_node();
         ntmp->add_child(child);
@@ -109,17 +110,21 @@ Node* NewickString::to_node() {
 };
 
 
+/*
+ * Extracts immediate children as NewickStrings.
+ */
 std::vector<NewickString> NewickString::get_descendants() const {
-    std::vector<NewickString> descendants { std::vector<NewickString>() };
-    std::vector<Token> descendant_tokens { std::vector<Token>() };
+    auto descendants { std::vector<NewickString>() };
+    auto descendant_tokens { std::vector<Token>() };
     bool comma { false };
 
     for (auto token : tokens) {
-        if (token.type == TokenType::COMMA && token.level == min_level + 1) {
+        if (token.type == COMMA && token.level == min_level + 1) {
+            // A comma separating immediate children.
             comma = true;
             descendants.emplace_back(descendant_tokens);
             descendant_tokens = std::vector<Token>();
-        } else if (token.level > min_level) {
+        } else if (token.level > min_level) {  // We are on the children level.
             descendant_tokens.emplace_back(token.character, token.type, token.level);
         }
     }
