@@ -10,3 +10,4 @@ $ ./cmake-build-release/newick binarise -s "(a,b,c,d)e" |  ./cmake-build-release
       └──┤
          └d
 ```
+
