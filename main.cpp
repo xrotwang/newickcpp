@@ -6,13 +6,36 @@
 #include "parser.h"
 #include "newick_lib/util.h"
 
+enum Cmd {
+    binarise, // 0
+    print_ascii, // 1
+    help,
+};
+
+constexpr Cmd getCmd(const std::string_view sv) {
+    // We can only switch on an integral value (or enum), not a string
+    // so we have to use if-statements here
+    if (sv == "binarise") return binarise;
+    if (sv == "print-ascii") return print_ascii;
+    return help;
+}
 
 int main(int argc, char **argv) {
     argparse::ArgumentParser program("newick");
     std::string cmd;
-    program.add_argument("cmd").store_into(cmd);
+    program.add_argument("cmd")
+            .help("{binarise, print-ascii}")
+            .choices("binarise", "print-ascii")
+            .store_into(cmd);
     std::string path;
-    program.add_argument("input").store_into(path);
+    program.add_argument("-f")
+            .help("read input from file")
+            .default_value("").store_into(path);
+    std::string string;
+    program.add_argument("-s")
+            .help("read input from string argument")
+            .default_value("").store_into(string);
+
     try {
         program.parse_args(argc, argv);
     } catch (const std::exception &err) {
@@ -21,30 +44,32 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Node *tree {parse(read_file(path))};
-
-    if (cmd == "binarise") {
-        std::cout << tree->to_newick() << std::endl;
-        tree->remove_redundant_nodes();
-        tree->resolve_polytomies();  // now we have binary tree!
-        std::cout << tree->to_newick() << std::endl;
-
-    } else {
-        std::string newick{"((5,6)3,2,4)1"};
-        //std::string newick { "((u,v,w,x,y,z)anode:1.45,(((xxx)zz,yyy)xx,yy)bnode:23.4)cnode:2.3" };
-        Node *root{parse(std::vector<char>(newick.begin(), newick.end()))};
-        root->visit();
-        std::vector<Node *> ponodes{root->postorder_traversal()};
-        for (unsigned int i = 0; i < ponodes.size(); i++) {
-            std::cout << ponodes[i]->name << std::endl;
-        }
-
+    std::vector<char> input;
+    if (!path.empty()) {
+        input = read_file(path);
+    } else if (!string.empty()) {
+        input = std::vector<char>(string.begin(), string.end());
+    } else {  // read from stdin
+        std::string input_line;
+        std::getline(std::cin, input_line);
+        input = std::vector<char>(input_line.begin(), input_line.end());
     }
+    Node *tree{parse(input)};
 
-    tree = NewickString("(((z,zz)a,(x,(e,fffff)y)bb,ccc)dd)R;").to_node();
-    std::vector<std::string> lines {tree->ascii_art()};
-    for (const auto & line : lines) {
-        std::cout << line << std::endl;
+    switch (getCmd(cmd)) {
+        case binarise:
+            tree->remove_redundant_nodes();
+            tree->resolve_polytomies(); // now we have binary tree!
+            std::cout << tree->to_newick() << std::endl;
+            break;
+        case print_ascii:
+            for (const auto &line: tree->ascii_art()) {
+                std::cout << line << std::endl;
+            };
+            break;
+        default:
+            // print help
+            break;
     }
     return 0;
 }

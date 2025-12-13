@@ -174,10 +174,8 @@ std::string Node::to_newick(int level) const {
 
 
 std::string dashes(unsigned long n) {
-    unsigned long i {0};
-    std::string res;
-    while (i < n) {
-        i++;
+    std::string res {""};
+    for (unsigned long i = 0; i < n; i++) {
         res += "\u2500";
     }
     return res;
@@ -196,8 +194,9 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
             maxlen = (*max_node)->name.size();
         }
     }
-    auto pad {std::string(maxlen, ' ')};
-    auto pad_minus_1 {std::string(maxlen - 1, ' ')};
+    auto pad {std::string(maxlen + 2, ' ')};
+    auto pad_minus_1 {std::string(maxlen + 1, ' ')};
+    std::vector<std::string> lines {std::vector<std::string>()};
 
     if (!this->children.empty()) {
         auto result {std::vector<std::string>()};  // accumulated lines of all child nodes.
@@ -212,7 +211,7 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
                 char2 = "\u2514";
             }
             // Recursively compute the lines of the ascii representation of child nodes.
-            std::vector<std::string> res { this->children[i]->ascii_art(char2, maxlen) };
+            std::vector<std::string> res { this->children[i]->ascii_art(char2, maxlen)};
             result.reserve(result.size() + res.size());
             result.insert(result.end(),res.begin(),res.end());
             result.emplace_back("\u2502");  // add a line starting with a pipe to space nodes vertically.
@@ -239,25 +238,32 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
         if (hi != 0) {  // More than one child, attach the parent centered.
             mid = lo + ((hi - lo) / 2);
         }
-        std::vector<std::string> lines {std::vector<std::string>()};
         // loop over result by index; compute prefix; prepend prefix.
+        // prefix is expected to be maxlen + 2
         for (int i {0}; i < end; i++) {
             std::string prefix { pad };
             std::string line {result[static_cast<unsigned long>(i)]};
 
             if (i == mid) {
                 // We attach the current node as parent.
-                prefix = char1 + this->name + dashes(maxlen - (this->name.size() + 1));
+                if (maxlen > this->name.size()) {
+                    prefix = char1 + this->name + dashes(maxlen - this->name.size()) + "\u2500";
+                } else {
+                    prefix = char1 + this->name + "\u2500";
+                }
                 if (line.rfind(pad + "\u2502", 0) == 0) {
                     // The tree has more than one nesting level.
                     prefix += "\u2502";
                     line.erase(0, 1);
                 } else if (line.rfind("\u2500", 0) == 0 && hi != 0) {
+                    // a crossing - parent with odd number (>= 3) of chlidren.
                     line.erase(0, 3);
                     line = "\u253c" + line;
+                } else if (line.rfind("\u2502", 0) == 0) {
+                    // Replace pipe with T-crossing character.
+                    line.erase(0, 3);
+                    line = "\u2524" + line;
                 }
-            } else if (char1 != "\u2500" && i > lo && i < hi) {
-                prefix = "\u2502" + pad_minus_1;  // Prepend a pipe if we are in between children.
             } else if ((char1 == "\u2514") && i < mid) {
                 // Before the last child
                 prefix = "\u2502" + pad_minus_1;
@@ -277,7 +283,6 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
         }
         return lines;
     }
-    std::vector<std::string> lines {std::vector<std::string>()};
     lines.emplace_back(char1 + this->name);
     return lines;
 };
