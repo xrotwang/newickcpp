@@ -53,6 +53,19 @@ TEST_CASE("binarise", "[regular]") {
   CHECK(node->to_newick() == "(a,(b,(c,d)))e;");
 };
 
+TEST_CASE("visit", "[regular]") {
+  std::string newick { "(a:1.1,c)b" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  node->visit();
+  CHECK(true);
+};
+
+TEST_CASE("to_newick", "[regular]") {
+  std::string newick { "(a:1.1)b" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  CHECK(node->to_newick() == "(a:1.1)b;");
+};
+
 TEST_CASE("print_ascii", "[regular]") {
   std::string newick { "(a)b" };
   Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
@@ -65,4 +78,25 @@ TEST_CASE("print_ascii_2", "[regular]") {
   CHECK(node->ascii_art()[0] == "    ┌a");
   CHECK(node->ascii_art()[1] == "─cc─┤");
   CHECK(node->ascii_art()[2] == "    └b");
+};
+
+TEST_CASE("print_ascii_3", "[regular]") {
+  std::string newick { "(a,b,cc)c" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::vector<std::string> lines {node->ascii_art()};
+  CHECK(lines[0] == "    ┌a");
+  CHECK(lines[1] == "─c──┼b");
+  CHECK(lines[2] == "    └cc");
+};
+
+TEST_CASE("print_ascii_4", "[regular]") {
+  std::string newick { "((x,y)a,b,cc)c" };
+  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::vector<std::string> lines {node->ascii_art()};
+  CHECK(lines[0] == "        ┌x");
+  CHECK(lines[1] == "    ┌a──┤");
+  CHECK(lines[2] == "    │   └y");
+  CHECK(lines[3] == "─c──┤");
+  CHECK(lines[4] == "    ├b");
+  CHECK(lines[5] == "    └cc");
 };

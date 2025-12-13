@@ -5,6 +5,8 @@
 
 #include "node.h"
 
+#include <set>
+
 
 Node::Node(std::string name, std::string branch_length)
     : name{std::move(name)}, branch_length{std::move(branch_length)} {
@@ -179,7 +181,7 @@ std::string dashes(unsigned long n) {
         res += "\u2500";
     }
     return res;
-};
+}
 
 
 std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long maxlen) {
@@ -281,8 +283,26 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
             }
             lines.emplace_back(prefix + line);
         }
-        return lines;
+    } else {
+        lines.emplace_back(char1 + this->name);
     }
-    lines.emplace_back(char1 + this->name);
+    // FIXME: Compactify!
+    std::vector<unsigned long> indices {std::vector<unsigned long>()};
+
+    for (unsigned long i {0}; i < lines.size(); i++) {
+        std::string non_space {""};
+        for (char j : lines[i]) {
+            if (j != ' ') {
+                non_space += j;
+            }
+        }
+        if (non_space == "\u2502" || non_space == "\u2502\u2502" || non_space == "\u2502\u2502\u2502") {
+            indices.emplace_back(i);
+        }
+    }
+    while (!indices.empty()) {
+        lines.erase(std::next(lines.begin(), static_cast<int>(indices.back())));
+        indices.pop_back();
+    }
     return lines;
 };
