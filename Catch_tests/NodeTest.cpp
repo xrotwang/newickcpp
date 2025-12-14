@@ -81,7 +81,7 @@ TEST_CASE("branch_length_as_float", "[regular]") {
   CHECK(node->branch_length_as_float() == 1.0);
   newick = "(a,b)c";
   node = parse(std::vector<char>(newick.begin(), newick.end()));
-  CHECK(node->branch_length_as_float() == 0.0);
+  CHECK(node->branch_length_as_float() == 10.0);
 };
 
 TEST_CASE("print_ascii", "[regular]") {

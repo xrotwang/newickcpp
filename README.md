@@ -1,3 +1,5 @@
+[![Build and test](https://github.com/xrotwang/newickcpp/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/xrotwang/newickcpp/actions/workflows/cmake-single-platform.yml)
+
 # newick
 
 ```shell
