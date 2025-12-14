@@ -2,6 +2,7 @@ set(HEADER_FILES
         util.h
         node.h
         parser.h
+        argparse.hpp
         )
 
 set(SOURCE_FILES

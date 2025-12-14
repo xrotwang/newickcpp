@@ -1,9 +1,9 @@
 #include <format>
 #include <iostream>
 #include <vector>
-#include <argparse/argparse.hpp>
 
 #include "parser.h"
+#include "newick_lib/argparse.hpp"
 #include "newick_lib/util.h"
 
 enum Cmd {
