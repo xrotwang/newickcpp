@@ -86,6 +86,7 @@ std::vector<Node*> Node::postorder_traversal() {
         while (!stack.empty() && temp->childrenIndex ==
                 static_cast<int>(stack.top()->node->children.size()) - 1)
         {
+            delete temp;
             temp = stack.top();
             stack.pop();
             postorderTraversal.push_back(temp->node);
@@ -97,6 +98,7 @@ std::vector<Node*> Node::postorder_traversal() {
             current = stack.top()->node->children[static_cast<unsigned>(temp->childrenIndex) + 1];
             currentIndex = temp->childrenIndex + 1;
         }
+        delete temp;
     };
     return postorderTraversal;
 }
