@@ -8,7 +8,6 @@
 #include "node.h"
 
 
-
 Node::Node(std::string name, std::string branch_length)
     : name{std::move(name)}, branch_length{std::move(branch_length)} {
 }
@@ -24,7 +23,7 @@ double Node::branch_length_as_float() const {
 /*
  * Visit each node in a tree, possibly mutating it.
  */
-void Node::visit(const std::function<void(Node*)>& visitor, int level) {
+void Node::visit(const std::function<void(Node*)>& visitor, const int level) {
     visitor(this);
     for (auto &i: children) {
         i->visit(visitor, level + 1);
@@ -37,7 +36,7 @@ public:
     Node *node;
     int childrenIndex;
 
-    Pair(Node *_node, int _childrenIndex)
+    Pair(Node *_node, const int _childrenIndex)
         : node {nullptr}, childrenIndex { 0 }
     {
         node = _node;
@@ -51,7 +50,7 @@ std::vector<Node*> Node::postorder_traversal() {
     std::stack<Pair*> stack;
     std::vector<Node*> postorderTraversal ;
 
-    Node *current { this };
+    auto current { this };
 
     while (!stack.empty() || current != nullptr) {
         if (current != nullptr) {
@@ -70,7 +69,7 @@ std::vector<Node*> Node::postorder_traversal() {
             continue;
         }
         // Top node on the stack is returned
-        Pair* temp = stack.top();
+        const Pair* temp = stack.top();
         stack.pop();
         postorderTraversal.push_back(temp->node);
 
@@ -124,9 +123,9 @@ Node* Node::resolve_polytomies() {
  * Remove redundant nodes.
  */
 Node* Node::remove_redundant_nodes() {
-    for (auto &n: this->postorder_traversal()) {
+    for (const auto &n: this->postorder_traversal()) {
         if (n->children.size() == 1) {
-            double length {n->branch_length_as_float() + n->get_children()[0]->branch_length_as_float()};
+            const double length {n->branch_length_as_float() + n->get_children()[0]->branch_length_as_float()};
             if (!n->branch_length.empty()) {
                 n->branch_length = std::to_string(length);
             }
@@ -144,8 +143,8 @@ Node* Node::remove_redundant_nodes() {
 /*
  * Format the tree as Newick string.
  */
-std::string Node::to_newick(int level) const {
-    std::string newick { std::string("") };
+std::string Node::to_newick(const int level) const {
+    auto newick { std::string("") };
     if (!this->children.empty()) {
         newick.append("(");
         for (auto &n: this->children) {
@@ -180,8 +179,8 @@ std::string dashes(unsigned long n) {
 };
 
 
-std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long maxlen) {
-    if (maxlen == 0) {  // Determine the maximal length of a node label.
+std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long max_len) {
+    if (max_len == 0) {  // Determine the maximal length of a node label.
         std::vector<Node*> nodes {this->postorder_traversal()};
         auto max_node = std::max_element(
             nodes.begin(),
@@ -189,12 +188,12 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
             [](const auto& s1, const auto& s2){return s1->name.size() < s2->name.size();}
             );
         if (max_node != nodes.end()) {
-            maxlen = (*max_node)->name.size();
+            max_len = (*max_node)->name.size();
         }
     }
-    auto pad {std::string(maxlen + 2, ' ')};
-    auto pad_minus_1 {std::string(maxlen + 1, ' ')};
-    std::vector<std::string> lines {std::vector<std::string>()};
+    auto pad {std::string(max_len + 2, ' ')};
+    auto pad_minus_1 {std::string(max_len + 1, ' ')};
+    auto lines {std::vector<std::string>()};
 
     if (!this->children.empty()) {
         auto result {std::vector<std::string>()};  // accumulated lines of all child nodes.
@@ -209,7 +208,7 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
                 char2 = "\u2514";
             }
             // Recursively compute the lines of the ascii representation of child nodes.
-            std::vector<std::string> res { this->children[i]->ascii_art(char2, maxlen)};
+            std::vector<std::string> res { this->children[i]->ascii_art(char2, max_len)};
             result.reserve(result.size() + res.size());
             result.insert(result.end(),res.begin(),res.end());
             result.emplace_back("\u2502");  // add a line starting with a pipe to space nodes vertically.
@@ -236,19 +235,19 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
             mid = lo + ((hi - lo) / 2);
         }
         // loop over result by index; compute prefix; prepend prefix.
-        // prefix is expected to be maxlen + 2
+        // prefix is expected to be max_len + 2
         for (int i {0}; i < end; i++) {
             std::string prefix { pad };
             std::string line {result[static_cast<unsigned long>(i)]};
 
             if (i == mid) {
-                prefix = char1 + this->name + dashes(maxlen - this->name.size()) + "\u2500";
+                prefix = char1 + this->name + dashes(max_len - this->name.size()) + "\u2500";
                 if (line.rfind(pad + "\u2502", 0) == 0) {
                     // The tree has more than one nesting level.
                     prefix += "\u2502";
                     line.erase(0, 1);
                 } else if (line.rfind("\u2500", 0) == 0 && hi != 0) {
-                    // a crossing - parent with odd number (>= 3) of chlidren.
+                    // a crossing - parent with odd number (>= 3) of children.
                     line.erase(0, 3);
                     line.insert(0, "\u253c");
                 } else if (line.rfind("\u2502", 0) == 0) {
@@ -256,11 +255,8 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
                     line.erase(0, 3);
                     line.insert(0, "\u2524");
                 }
-            } else if ((char1 == "\u2514") && i < mid) {
-                // Before the last child
-                prefix = "\u2502" + pad_minus_1;
-            } else if ((char1 == "\u250c") && i > mid) {
-                // After the first child
+            } else if (((char1 == "\u2514") && i < mid) || ((char1 == "\u250c") && i > mid)) {
+                // Before the last child or after the first child
                 prefix = "\u2502" + pad_minus_1;
             } else if (i > lo && i < hi && line.rfind("\u2500", 0) == 0) {
                 // An intermediate child node.
@@ -280,7 +276,7 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
     auto indices {std::vector<unsigned long>()};
 
     for (unsigned long i {0}; i < lines.size(); i++) {
-        // Hacky way to work around the missing (simple) support for unicode in regexes.
+        // Hacky way to work around the missing (simple) support for Unicode in regexes.
         std::string non_space;
         for (char j : lines[i]) {
             if (j != ' ') {

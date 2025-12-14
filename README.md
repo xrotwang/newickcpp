@@ -2,6 +2,18 @@
 
 # newick
 
+## Install
+
+```shell
+cmake -B build
+cmake --build build
+cd build
+make
+sudo make install
+```
+
+## Usage
+
 ```shell
 $ newick binarise -s "(a,b,c,d)e" |  newick print-ascii
    ┌a
@@ -11,14 +23,4 @@ $ newick binarise -s "(a,b,c,d)e" |  newick print-ascii
       │  ┌c
       └──┤
          └d
-```
-
-## Install
-
-```shell
-cmake -B build
-cmake --build build
-cd build
-make
-sudo make install
 ```

@@ -10,7 +10,7 @@
 
 
 // FIXME: turn into struct?
-Token::Token(char character, TokenType type, int level)
+Token::Token(char character, const TokenType type, int level)
     : character {character}, type {type}, level {level}
 {
 };
@@ -65,7 +65,7 @@ NewickString::NewickString(const std::string &string)
 };
 
 std::unique_ptr<Node> NewickString::to_node() const {
-    std::vector<Token> root_tokens { std::vector<Token>() };
+    auto root_tokens { std::vector<Token>() };
 
     // Parse root name and length. We traverse the tokens starting at the end, and collect everything
     // except closing braces until we hit a higher level.
@@ -100,10 +100,9 @@ std::unique_ptr<Node> NewickString::to_node() const {
     }
 
     // Instantiate a Node ...
-    std::unique_ptr<Node> node {std::make_unique<Node>(name, length)};
+    auto node {std::make_unique<Node>(name, length)};
     // ... and add children recursively.
-    std::vector descendants { get_descendants() };
-    for (auto & descendant : descendants) {
+    for (std::vector descendants { get_descendants() }; auto & descendant : descendants) {
         node->add_child(descendant.to_node());
     }
     return node;
