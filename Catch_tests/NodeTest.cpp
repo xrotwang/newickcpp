@@ -2,6 +2,7 @@
 // Created by robert on 11/29/25.
 //
 #include <functional>
+#include <memory>
 #include <iostream>
 
 #include <catch2/catch_test_macros.hpp>
@@ -30,7 +31,7 @@ Output: [5, 6, 3, 2, 4, 1]
  */
 TEST_CASE("postorder", "[regular]") {
   std::string newick { "((5,6)3,2,4)1" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   std::vector<Node*> ponodes { node->postorder_traversal() };
   CHECK(ponodes[0]->name == "5");
   CHECK(ponodes[1]->name == "6");
@@ -42,7 +43,7 @@ TEST_CASE("postorder", "[regular]") {
 
 TEST_CASE("binarise", "[regular]") {
   std::string newick { "((a,b,c,d)e)f" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   node->remove_redundant_nodes()->resolve_polytomies();
   CHECK(node->to_newick() == "(a,(b,(c,d)))e;");
 };
@@ -57,7 +58,7 @@ void rename_node(Node* n) {
 
 TEST_CASE("visit", "[regular]") {
   std::string newick { "(a:1.1,c)b" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
 
   node->visit(rename_node);
   CHECK(node->to_newick() == "(aaa:1.1,c)b;");
@@ -65,19 +66,19 @@ TEST_CASE("visit", "[regular]") {
 
 TEST_CASE("to_newick", "[regular]") {
   std::string newick { "(a:1.1)b:1.0" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   CHECK(node->to_newick() == "(a:1.1)b:1.0;");
 };
 
 TEST_CASE("remove_redundant_nodes", "[regular]") {
   std::string newick { "((c,d)a:1.0)b:1.0" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   CHECK(node->remove_redundant_nodes()->to_newick() == "(c,d)a:2.000000;");
 };
 
 TEST_CASE("branch_length_as_float", "[regular]") {
   std::string newick { "(a:1.1)b:1.0" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   CHECK(node->branch_length_as_float() == 1.0);
   newick = "(a,b)c";
   node = parse(std::vector<char>(newick.begin(), newick.end()));
@@ -86,13 +87,13 @@ TEST_CASE("branch_length_as_float", "[regular]") {
 
 TEST_CASE("print_ascii", "[regular]") {
   std::string newick { "(a)b" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   CHECK(node->ascii_art()[0] == "─b──a");
 };
 
 TEST_CASE("print_ascii_2", "[regular]") {
   std::string newick { "(a,b)cc" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   CHECK(node->ascii_art()[0] == "    ┌a");
   CHECK(node->ascii_art()[1] == "─cc─┤");
   CHECK(node->ascii_art()[2] == "    └b");
@@ -100,7 +101,7 @@ TEST_CASE("print_ascii_2", "[regular]") {
 
 TEST_CASE("print_ascii_3", "[regular]") {
   std::string newick { "(a,b,cc)c" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   std::vector<std::string> lines {node->ascii_art()};
   CHECK(lines[0] == "    ┌a");
   CHECK(lines[1] == "─c──┼b");
@@ -109,7 +110,7 @@ TEST_CASE("print_ascii_3", "[regular]") {
 
 TEST_CASE("print_ascii_4", "[regular]") {
   std::string newick { "((x,y)a,b,cc)c" };
-  Node* node { parse(std::vector<char>(newick.begin(), newick.end())) };
+  std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   std::vector<std::string> lines {node->ascii_art()};
   CHECK(lines[0] == "        ┌x");
   CHECK(lines[1] == "    ┌a──┤");
