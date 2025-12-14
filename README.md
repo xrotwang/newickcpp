@@ -3,7 +3,7 @@
 # newick
 
 ```shell
-$ ./cmake-build-release/newick binarise -s "(a,b,c,d)e" |  ./cmake-build-release/newick print-ascii
+$ newick binarise -s "(a,b,c,d)e" |  newick print-ascii
    ┌a
 ─e─┤
    │  ┌b
@@ -13,3 +13,12 @@ $ ./cmake-build-release/newick binarise -s "(a,b,c,d)e" |  ./cmake-build-release
          └d
 ```
 
+## Install
+
+```shell
+cmake -B build
+cmake --build build
+cd build
+make
+sudo make install
+```

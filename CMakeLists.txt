@@ -19,3 +19,4 @@ target_link_libraries(newick
         newick_lib)
 
 add_subdirectory(Catch_tests)
+install(TARGETS newick)
