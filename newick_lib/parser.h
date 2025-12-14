@@ -1,6 +1,7 @@
 #ifndef NEWICK_PARSER_H
 #define NEWICK_PARSER_H
 
+#include <memory>
 #include <vector>
 #include "node.h"
 
@@ -32,11 +33,11 @@ public:
     explicit NewickString(std::vector<char> characters);
     explicit NewickString(const std::vector<Token> &tokens);
     explicit NewickString(const std::string &string);
-    [[nodiscard]] Node* to_node() const;
+    [[nodiscard]] std::unique_ptr<Node> to_node() const;
     [[nodiscard]] int get_min_level() const;
     [[nodiscard]] std::vector<NewickString> get_descendants() const;
 };
 
-Node* parse(std::vector<char> characters);
+std::unique_ptr<Node> parse(std::vector<char> characters);
 
 #endif //NEWICK_PARSER_H

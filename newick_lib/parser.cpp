@@ -6,6 +6,8 @@
 #include "node.h"
 #include "parser.h"
 
+#include <memory>
+
 
 // FIXME: turn into struct?
 Token::Token(char character, TokenType type, int level)
@@ -62,7 +64,7 @@ NewickString::NewickString(const std::string &string)
     tokens = NewickString(std::vector<char>(string.begin(), string.end())).tokens;
 };
 
-Node* NewickString::to_node() const {
+std::unique_ptr<Node> NewickString::to_node() const {
     std::vector<Token> root_tokens { std::vector<Token>() };
 
     // Parse root name and length. We traverse the tokens starting at the end, and collect everything
@@ -98,14 +100,13 @@ Node* NewickString::to_node() const {
     }
 
     // Instantiate a Node ...
-    Node *ntmp = new Node(name, length);
+    std::unique_ptr<Node> node {std::make_unique<Node>(name, length)};
     // ... and add children recursively.
     std::vector descendants { get_descendants() };
     for (auto & descendant : descendants) {
-        Node* child = descendant.to_node();
-        ntmp->add_child(child);
+        node->add_child(descendant.to_node());
     }
-    return ntmp;
+    return node;
 };
 
 
@@ -140,6 +141,6 @@ int NewickString::get_min_level() const {
 }
 
 
-Node* parse(std::vector<char> characters) {
+std::unique_ptr<Node> parse(std::vector<char> characters) {
     return NewickString(std::move(characters)).to_node();
 }

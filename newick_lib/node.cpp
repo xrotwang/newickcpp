@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <iterator>
 #include <regex>
 #include <set>
 #include <stack>
@@ -6,27 +8,17 @@
 #include "node.h"
 
 
+
 Node::Node(std::string name, std::string branch_length)
     : name{std::move(name)}, branch_length{std::move(branch_length)} {
-    children = std::vector<Node *>();
 }
 
-Node::~Node()
-= default;
-
-Node::Node(const Node &N)
-    : name{N.name}, branch_length{N.branch_length} {
-}
 
 double Node::branch_length_as_float() const {
     if (!branch_length.empty()) {
         return std::stod(branch_length);
     }
     return 0.0;
-}
-
-void Node::add_child(Node *child) {
-    (this->children).push_back(child);
 }
 
 /*
@@ -70,7 +62,7 @@ std::vector<Node*> Node::postorder_traversal() {
 
             if (!current->children.empty()) {
                 // Traverse to the leftmost child
-                current = current->children[0];
+                current = &*current->get_children()[0];
             } else {
                 // No children, mark current as null and look what's left on the stack.
                 current = nullptr;
@@ -95,7 +87,7 @@ std::vector<Node*> Node::postorder_traversal() {
         // If stack is not empty, go one level up, and continue.
         if (!stack.empty())
         {
-            current = stack.top()->node->children[static_cast<unsigned>(temp->childrenIndex) + 1];
+            current = &*(stack.top()->node)->get_children()[static_cast<unsigned>(temp->childrenIndex) + 1];
             currentIndex = temp->childrenIndex + 1;
         }
         delete temp;
@@ -105,22 +97,27 @@ std::vector<Node*> Node::postorder_traversal() {
 
 
 Node* Node::resolve_polytomies() {
-    Node* node {this};
     if (this->children.size() > 2) {  // A polytomy.
         // We insert a new node as parent for all but one child.
-        node = new Node("", "");
-        while (this->children.size() > 1) {
-            node->add_child(this->children[this->children.size() - 1]);
-            this->children.pop_back();
-        }
-        // We added children from the back, so we reverse to keep the order.
-        std::reverse(node->children.begin(), node->children.end());
-        this->add_child(node);
+        this->children.emplace_back(std::make_unique<Node>("", ""));
+        // Move all children but the first and the newly created child to the new node.
+        std::move(
+            this->children.begin() + 1,
+            this->children.end() - 1,
+            std::back_inserter(this->children.back()->children));
+        std::for_each(
+            this->children.begin() + 1,
+            this->children.end() - 1,
+            [](std::unique_ptr<Node>& n){
+            n.reset(); // Calls reset() on the unique_ptr reference
+        });
+        this->children.erase(this->children.begin() + 1, this->children.end() - 1);
     }
+
     for (auto &i: this->children) {  // Recurse.
         i->resolve_polytomies();
     }
-    return node;
+    return this;
 }
 
 /*
@@ -129,20 +126,16 @@ Node* Node::resolve_polytomies() {
 Node* Node::remove_redundant_nodes() {
     for (auto &n: this->postorder_traversal()) {
         if (n->children.size() == 1) {
-            Node* child = n->children[0];
-            // Replace the only child with the grandchildren (if any).
-            // Adapt branch_length. Adapt name. Delete the only child.
-            n->name = child->name;
+            double length {n->branch_length_as_float() + n->get_children()[0]->branch_length_as_float()};
             if (!n->branch_length.empty()) {
-                double length {n->branch_length_as_float()};
-                length += child->branch_length_as_float();
                 n->branch_length = std::to_string(length);
             }
-            n->children.pop_back();
-            for (auto &i: child->children) {
-                n->add_child(i);
-            }
-            delete child;
+            n->name = n->get_children()[0]->name;
+            std::move(
+                n->children[0]->children.begin(),
+                n->children[0]->children.end(),
+                std::back_inserter(n->children));
+            n->children.erase(n->children.begin(), n->children.begin() + 1);
         };
     }
     return this;
@@ -172,7 +165,7 @@ std::string Node::to_newick(int level) const {
         newick.append(";");
     }
     return newick;
-}
+};
 
 
 std::string dashes(unsigned long n) {
@@ -184,7 +177,7 @@ std::string dashes(unsigned long n) {
         res += "\u2500";
     }
     return res;
-}
+};
 
 
 std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long maxlen) {
