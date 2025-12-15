@@ -27,7 +27,7 @@ double Node::branch_length_as_float() const {
  */
 void Node::visit(const std::function<void(Node*)>& visitor, const int level) {
     visitor(this);
-    for (auto &i: children) {
+    for (const auto &i: children) {
         i->visit(visitor, level + 1);
     }
 }
@@ -44,6 +44,18 @@ public:
         node = _node;
         childrenIndex = _childrenIndex;
     }
+};
+
+
+std::vector<Node*> Node::traverse() {
+    std::vector<Node*> res;
+    res.push_back(this);
+    for (const auto & n: children) {
+        for (auto &i: n->traverse()) {
+            res.push_back(i);
+        }
+    }
+    return res;
 };
 
 
@@ -203,7 +215,7 @@ std::string pipes(std::string s) {
 
 std::vector<std::string> Node::ascii_art(unsigned long max_len) {
     if (max_len == 0) {  // Determine the maximal length of a node label.
-        std::vector<Node*> nodes {this->postorder_traversal()};
+        std::vector<Node*> nodes {this->traverse()};
         auto max_node = std::ranges::max_element(
             nodes,
             [](const auto& s1, const auto& s2){return s1->name.size() < s2->name.size();}
@@ -244,7 +256,7 @@ std::vector<std::string> Node::ascii_art(unsigned long max_len) {
                      * we insert an additional line if there's an even number of children.
                      */
                     mid --;  // Decrement the indicator for the middle line.
-                    if (i > 0) {
+                    if (i > 0) {  // Make sure pipes from the previous line are continued.
                         lines.push_back(this->name + dashes(max_len + 1 - this->name.size()) + "\u2524" + pipes(child_lines[i - 1]));
                     } else {
                         lines.push_back(this->name + dashes(max_len + 1 - this->name.size()) + "\u2524");

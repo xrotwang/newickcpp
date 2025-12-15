@@ -35,6 +35,7 @@ public:
     [[nodiscard]] double branch_length_as_float() const;
     void visit(const std::function<void(Node*)>& visitor, int level = 0);
     std::vector<Node*> postorder_traversal();
+    std::vector<Node*> traverse();
     Node* resolve_polytomies();
     Node* remove_redundant_nodes();
     [[nodiscard]] std::string to_newick(int level=0) const;
