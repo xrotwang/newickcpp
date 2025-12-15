@@ -7,6 +7,8 @@
 
 #include "node.h"
 
+#include <iostream>
+
 
 Node::Node(std::string name, std::string branch_length)
     : name{std::move(name)}, branch_length{std::move(branch_length)} {
@@ -104,12 +106,6 @@ Node* Node::resolve_polytomies() {
             this->children.begin() + 1,
             this->children.end() - 1,
             std::back_inserter(this->children.back()->children));
-        std::for_each(
-            this->children.begin() + 1,
-            this->children.end() - 1,
-            [](std::unique_ptr<Node>& n){
-            n.reset(); // Calls reset() on the unique_ptr reference
-        });
         this->children.erase(this->children.begin() + 1, this->children.end() - 1);
     }
 
@@ -151,7 +147,7 @@ std::string Node::to_newick(const int level) const {
             if (newick.back() != '(') {
                 newick.append(",");
             }
-            newick.append(n->to_newick(level + 1));
+            newick.append(n->to_newick(level + 1));  // recurse.
         }
         newick.append(")");
     }
@@ -164,7 +160,7 @@ std::string Node::to_newick(const int level) const {
         newick.append(";");
     }
     return newick;
-};
+}
 
 
 std::string dashes(unsigned long n) {
@@ -176,7 +172,7 @@ std::string dashes(unsigned long n) {
         res += "\u2500";
     }
     return res;
-};
+}
 
 
 std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long max_len) {
@@ -207,6 +203,9 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
             } else if (i == this->children.size() - 1) {  // last child of several
                 char2 = "\u2514";
             }
+            //else {
+            //    char2 = "\u251c";
+            //}
             // Recursively compute the lines of the ascii representation of child nodes.
             std::vector<std::string> res { this->children[i]->ascii_art(char2, max_len)};
             result.reserve(result.size() + res.size());
@@ -242,11 +241,7 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
 
             if (i == mid) {
                 prefix = char1 + this->name + dashes(max_len - this->name.size()) + "\u2500";
-                if (line.rfind(pad + "\u2502", 0) == 0) {
-                    // The tree has more than one nesting level.
-                    prefix += "\u2502";
-                    line.erase(0, 1);
-                } else if (line.rfind("\u2500", 0) == 0 && hi != 0) {
+                if (line.rfind("\u2500", 0) == 0 && hi != 0) {
                     // a crossing - parent with odd number (>= 3) of children.
                     line.erase(0, 3);
                     line.insert(0, "\u253c");
@@ -254,6 +249,10 @@ std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long
                     // Replace pipe with T-crossing character.
                     line.erase(0, 3);
                     line.insert(0, "\u2524");
+                } else if (line.rfind(pad + "\u2514", 0) == 0 || line.rfind(pad + "\u250c", 0) == 0) {
+                    // Add T-crossing character to prefix, remove one space from line.
+                    line.erase(0, 1);
+                    prefix.append("\u2524");
                 }
             } else if (((char1 == "\u2514") && i < mid) || ((char1 == "\u250c") && i > mid)) {
                 // Before the last child or after the first child
