@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
         std::getline(std::cin, input_line);
         input = std::vector<char>(input_line.begin(), input_line.end());
     }
-    std::unique_ptr<Node> tree {parse(input)};
+    const std::unique_ptr tree {parse(input)};
 
     switch (getCmd(cmd)) {
         case binarise:

@@ -30,7 +30,7 @@ class NewickString {
 public:
     std::vector<Token> tokens;
 
-    explicit NewickString(std::vector<char> characters);
+    explicit NewickString(const std::vector<char>& characters);
     explicit NewickString(const std::vector<Token> &tokens);
     explicit NewickString(const std::string &string);
     [[nodiscard]] std::unique_ptr<Node> to_node() const;
@@ -38,6 +38,6 @@ public:
     [[nodiscard]] std::vector<NewickString> get_descendants() const;
 };
 
-std::unique_ptr<Node> parse(std::vector<char> characters);
+std::unique_ptr<Node> parse(const std::vector<char>& characters);
 
 #endif //NEWICK_PARSER_H

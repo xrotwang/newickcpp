@@ -1,12 +1,10 @@
 #include <algorithm>
 #include <cassert>
-#include <utility>
 #include <vector>
+#include <memory>
 
 #include "node.h"
 #include "parser.h"
-
-#include <memory>
 
 
 // FIXME: turn into struct?
@@ -15,7 +13,7 @@ Token::Token(char character, const TokenType type, int level)
 {
 };
 
-NewickString::NewickString(std::vector<char> characters)
+NewickString::NewickString(const std::vector<char>& characters)
     : tokens { std::vector<Token>()}
 {
     int level { 0 };
@@ -140,6 +138,6 @@ int NewickString::get_min_level() const {
 }
 
 
-std::unique_ptr<Node> parse(std::vector<char> characters) {
-    return NewickString(std::move(characters)).to_node();
+std::unique_ptr<Node> parse(const std::vector<char>& characters) {
+    return NewickString(characters).to_node();
 }

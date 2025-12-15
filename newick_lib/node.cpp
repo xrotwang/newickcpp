@@ -215,14 +215,13 @@ std::string pipes(std::string s) {
 
 std::vector<std::string> Node::ascii_art(unsigned long max_len) {
     if (max_len == 0) {  // Determine the maximal length of a node label.
-        std::vector<Node*> nodes {this->traverse()};
-        auto max_node = std::ranges::max_element(
+        std::vector nodes {this->traverse()};
+        const auto max_node = std::ranges::max_element(
             nodes,
             [](const auto& s1, const auto& s2){return s1->name.size() < s2->name.size();}
         );
-        if (max_node != nodes.end()) {
-            max_len = (*max_node)->name.size();
-        }
+        // We know at least one node (namely `this`) is in `nodes`.
+        max_len = (*max_node)->name.size();
     }
     auto pad {std::string(max_len + 1, ' ')};
     auto lines {std::vector<std::string>()};
