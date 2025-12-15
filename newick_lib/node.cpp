@@ -126,9 +126,8 @@ Node* Node::remove_redundant_nodes() {
                 n->branch_length = std::to_string(length);
             }
             n->name = n->get_children()[0]->name;
-            std::move(
-                n->children[0]->children.begin(),
-                n->children[0]->children.end(),
+            std::ranges::move(
+                n->children[0]->children,
                 std::back_inserter(n->children));
             n->children.erase(n->children.begin(), n->children.begin() + 1);
         };
@@ -174,123 +173,120 @@ std::string dashes(unsigned long n) {
     return res;
 }
 
+/*
+ * Create a string with pipes at the positions matching downward pipes in the line above.
+ *
+ * in  = "   │   ┌x"
+ * out = "   │   │"
+ */
+std::string pipes(std::string s) {
+    std::string res;
+    while (!s.empty()) {
+        // look for |, |-, /
+        std::size_t next_pipe {s.find("\u2502")};
+        if (next_pipe == std::string::npos) {
+            next_pipe = s.find("\u250c");
+        }
+        if (next_pipe == std::string::npos) {
+            next_pipe = s.find("\u251c");
+        }
+        if (next_pipe == std::string::npos) {
+            break;
+        }
+        res += s.substr(0, next_pipe);
+        res += "\u2502";
+        s.erase(0, next_pipe + std::string("\u2502").size());
+    }
+    return res;
+}
 
-std::vector<std::string> Node::ascii_art(const std::string &char1, unsigned long max_len) {
+
+std::vector<std::string> Node::ascii_art(unsigned long max_len) {
     if (max_len == 0) {  // Determine the maximal length of a node label.
         std::vector<Node*> nodes {this->postorder_traversal()};
-        auto max_node = std::max_element(
-            nodes.begin(),
-            nodes.end(),
+        auto max_node = std::ranges::max_element(
+            nodes,
             [](const auto& s1, const auto& s2){return s1->name.size() < s2->name.size();}
-            );
+        );
         if (max_node != nodes.end()) {
             max_len = (*max_node)->name.size();
         }
     }
-    auto pad {std::string(max_len + 2, ' ')};
-    auto pad_minus_1 {std::string(max_len + 1, ' ')};
+    auto pad {std::string(max_len + 1, ' ')};
     auto lines {std::vector<std::string>()};
 
-    if (!this->children.empty()) {
-        auto result {std::vector<std::string>()};  // accumulated lines of all child nodes.
+    if (this->children.empty()) {
+        lines.push_back(this->name);
+        return lines;
+    }
 
-        for (unsigned int i = 0; i < this->children.size(); i++) {
-            std::string char2 {"\u2500"};
-            if (this->children.size() == 1) {  // only one child
-                char2 = "\u2500";
-            } else if (i == 0) {  // first child of several
-                char2 = "\u250c";
-            } else if (i == this->children.size() - 1) {  // last child of several
-                char2 = "\u2514";
-            }
-            //else {
-            //    char2 = "\u251c";
-            //}
-            // Recursively compute the lines of the ascii representation of child nodes.
-            std::vector<std::string> res { this->children[i]->ascii_art(char2, max_len)};
-            result.reserve(result.size() + res.size());
-            result.insert(result.end(),res.begin(),res.end());
-            result.emplace_back("\u2502");  // add a line starting with a pipe to space nodes vertically.
-        }
-        result.pop_back();  // remove the added line after the last child.
-        int end {static_cast<int>(result.size())};
-        int lo {0};  // The index of the line of the first immediate child
-        int hi {0};  // The index of the line of the last immediate child
-        int mid {0}; // The index of the line where to attach the parent node
+    int mid_child {static_cast<int>(this->children.size()) / 2};
+    bool even_number_of_children {static_cast<int>(this->children.size()) % 2 == 0};
+    int child_index {0};
+    bool in_children {false};
 
-        // find lo and hi as index of the line that starts with "\u250c" and "\u2514" respectively.
-        for (int i {0}; i < end; i++) {
-            if (result[static_cast<unsigned long>(i)].rfind("\u250c", 0) == 0) {
-                lo = i;
-            } else if (result[static_cast<unsigned long>(i)].rfind("\u2514", 0) == 0) {
-                hi = i;
-                break;  // If we found the last child, we're done here.
-            } else if (result[static_cast<unsigned long>(i)].rfind("\u2500", 0) == 0) {
-                // If there's only one child, we determine it by the leading "\u2500"
-                mid = i;
-            }
-        }
-        if (hi != 0) {  // More than one child, attach the parent centered.
-            mid = lo + ((hi - lo) / 2);
-        }
-        // loop over result by index; compute prefix; prepend prefix.
-        // prefix is expected to be max_len + 2
-        for (int i {0}; i < end; i++) {
-            std::string prefix { pad };
-            std::string line {result[static_cast<unsigned long>(i)]};
+    for (const auto & n : this->children) {
+        // Recursively compute the ascii representation of the child node.
+        std::vector child_lines { n->ascii_art(max_len)};
+        unsigned long mid {child_lines.size() / 2};
+        const bool last_child {n == this->children.back()};
 
-            if (i == mid) {
-                prefix = char1 + this->name + dashes(max_len - this->name.size()) + "\u2500";
-                if (line.rfind("\u2500", 0) == 0 && hi != 0) {
-                    // a crossing - parent with odd number (>= 3) of children.
-                    line.erase(0, 3);
-                    line.insert(0, "\u253c");
-                } else if (line.rfind("\u2502", 0) == 0) {
-                    // Replace pipe with T-crossing character.
-                    line.erase(0, 3);
-                    line.insert(0, "\u2524");
-                } else if (line.rfind(pad + "\u2514", 0) == 0 || line.rfind(pad + "\u250c", 0) == 0) {
-                    // Add T-crossing character to prefix, remove one space from line.
-                    line.erase(0, 1);
-                    prefix.append("\u2524");
+        // Loop over child_lines, and pad them or attach the parent name.
+        for (unsigned long i = 0; i < child_lines.size(); i++) {
+            std::string full_line {pad};
+            if (child_index == mid_child && i == mid) {
+                // Attach the parent name.
+                if (even_number_of_children && last_child) {
+                    /*
+                     * To avoid representations like
+                     *   /-a
+                     * c-\-b
+                     * we insert an additional line if there's an even number of children.
+                     */
+                    mid --;  // Decrement the indicator for the middle line.
+                    if (i > 0) {
+                        lines.push_back(this->name + dashes(max_len + 1 - this->name.size()) + "\u2524" + pipes(child_lines[i - 1]));
+                    } else {
+                        lines.push_back(this->name + dashes(max_len + 1 - this->name.size()) + "\u2524");
+                    }
+                } else {
+                    full_line = this->name + dashes(max_len - this->name.size()) + "\u2500";
                 }
-            } else if (((char1 == "\u2514") && i < mid) || ((char1 == "\u250c") && i > mid)) {
-                // Before the last child or after the first child
-                prefix = "\u2502" + pad_minus_1;
-            } else if (i > lo && i < hi && line.rfind("\u2500", 0) == 0) {
-                // An intermediate child node.
-                prefix = pad + "\u251c";
-                line.erase(0, 3);
-            } else if (i > lo && i < hi && line.rfind("\u2502", 0) != 0) {
-                // Add a pipe if there isn't already one.
-                prefix = pad + "\u2502";
-                line.erase(0, 1);
             }
-            lines.emplace_back(prefix + line);
-        }
-    } else {
-        lines.emplace_back(char1 + this->name);
-    }
-    // We remove lines containing only spaces and pipes.
-    auto indices {std::vector<unsigned long>()};
 
-    for (unsigned long i {0}; i < lines.size(); i++) {
-        // Hacky way to work around the missing (simple) support for Unicode in regexes.
-        std::string non_space;
-        for (char j : lines[i]) {
-            if (j != ' ') {
-                non_space += j;
+            const std::string& line {child_lines[i]};
+            if (line.find(' ', 0) == 0) { // line starts with space:
+                if (in_children) {
+                    // - either prepend pipe (if in between first child and last child)
+                    full_line.append("\u2502");
+                } else {
+                    // - or prepend space otherwise
+                    full_line.append(" ");
+                };
+            } else { // line does not start with space:
+                if (child_index == 0 && last_child) {
+                    // - prepend "-" if only one child
+                    full_line.append("\u2500");
+                } else if (!in_children) {
+                    // - prepend "/" if first child
+                    full_line.append("\u250c");
+                    in_children = true;
+                } else if (last_child) {
+                    // - prepend "\" if last child
+                    full_line.append("\u2514");
+                    in_children = false;
+                } else {
+                    // - prepend "|-" or "-|-" if in between children
+                    if (child_index == mid_child && i == mid) {
+                        full_line.append("\u253c");
+                    } else {
+                        full_line.append("\u251c");
+                    }
+                }
             }
+            lines.push_back(full_line + line);
         }
-        if (non_space == "\u2502" || non_space == "\u2502\u2502") {
-            // More than two pipes should not have accumulated at this point, because we compactify at
-            // each recursion level.
-            indices.emplace_back(i);
-        }
-    }
-    while (!indices.empty()) {  // We consume indices from back to start and erase lines accordingly.
-        lines.erase(std::next(lines.begin(), static_cast<int>(indices.back())));
-        indices.pop_back();
+        child_index++;
     }
     return lines;
 };

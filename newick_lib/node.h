@@ -38,7 +38,7 @@ public:
     Node* resolve_polytomies();
     Node* remove_redundant_nodes();
     [[nodiscard]] std::string to_newick(int level=0) const;
-    std::vector<std::string> ascii_art(const std::string &char1="\u2500", unsigned long max_len=0);
+    std::vector<std::string> ascii_art(unsigned long max_len=0);
 };
 
 

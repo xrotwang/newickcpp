@@ -88,61 +88,60 @@ TEST_CASE("branch_length_as_float", "[regular]") {
 TEST_CASE("print_ascii", "[regular]") {
   std::string newick { "(a)b" };
   std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
-  CHECK(node->ascii_art()[0] == "─b──a");
+  CHECK(node->ascii_art()[0] == "b──a");
 };
 
 TEST_CASE("print_ascii_2", "[regular]") {
   std::string newick { "(a,b)cc" };
   std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
-  CHECK(node->ascii_art()[0] == "    ┌a");
-  CHECK(node->ascii_art()[1] == "─cc─┤");
-  CHECK(node->ascii_art()[2] == "    └b");
+  CHECK(node->ascii_art()[0] == "   ┌a");
+  CHECK(node->ascii_art()[1] == "cc─┤");
+  CHECK(node->ascii_art()[2] == "   └b");
 };
 
 TEST_CASE("print_ascii_3", "[regular]") {
   std::string newick { "(a,b,cc)c" };
   std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   std::vector<std::string> lines {node->ascii_art()};
-  CHECK(lines[0] == "    ┌a");
-  CHECK(lines[1] == "─c──┼b");
-  CHECK(lines[2] == "    └cc");
+  CHECK(lines[0] == "   ┌a");
+  CHECK(lines[1] == "c──┼b");
+  CHECK(lines[2] == "   └cc");
 };
 
 TEST_CASE("print_ascii_4", "[regular]") {
   std::string newick { "((x,y)a,b,cc)c" };
   std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   std::vector<std::string> lines {node->ascii_art()};
-  CHECK(lines[0] == "        ┌x");
-  CHECK(lines[1] == "    ┌a──┤");
-  CHECK(lines[2] == "    │   └y");
-  CHECK(lines[3] == "─c──┤");
-  CHECK(lines[4] == "    ├b");
-  CHECK(lines[5] == "    └cc");
+  CHECK(lines[0] == "       ┌x");
+  CHECK(lines[1] == "   ┌a──┤");
+  CHECK(lines[2] == "   │   └y");
+  CHECK(lines[3] == "c──┼b");
+  CHECK(lines[4] == "   └cc");
 };
 
 TEST_CASE("print_ascii_5", "[regular]") {
   std::string newick { "(b,(x,y)cc)c" };
   std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   std::vector<std::string> lines {node->ascii_art()};
-  CHECK(lines[0] == "    ┌b");
-  CHECK(lines[1] == "─c──┤");
-  CHECK(lines[2] == "    │   ┌x");
-  CHECK(lines[3] == "    └cc─┤");
-  CHECK(lines[4] == "        └y");
+  CHECK(lines[0] == "   ┌b");
+  CHECK(lines[1] == "   │   ┌x");
+  CHECK(lines[2] == "c──┤   │");
+  CHECK(lines[3] == "   └cc─┤");
+  CHECK(lines[4] == "       └y");
 };
 
 TEST_CASE("print_ascii_6", "[regular]") {
   std::string newick { "((w,r),(a)b,(a,v,f)c,(aaa,rr,tt)c)xxx" };
   std::unique_ptr<Node> node { parse(std::vector<char>(newick.begin(), newick.end())) };
   std::vector<std::string> lines {node->ascii_art()};
-  CHECK(lines[0] == "          ┌w");
-  CHECK(lines[1] == "     ┌────┤");
-  CHECK(lines[2] == "     │    └r");
-  CHECK(lines[3] == "     ├b────a");
-  CHECK(lines[4] == "─xxx─┤    ┌a");
-  CHECK(lines[5] == "     ├c───┼v");
-  CHECK(lines[6] == "     │    └f");
-  CHECK(lines[7] == "     │    ┌aaa");
-  CHECK(lines[8] == "     └c───┼rr");
-  CHECK(lines[9] == "          └tt");
+  CHECK(lines[0] == "         ┌w");
+  CHECK(lines[1] == "    ┌────┤");
+  CHECK(lines[2] == "    │    └r");
+  CHECK(lines[3] == "    ├b────a");
+  CHECK(lines[4] == "    │    ┌a");
+  CHECK(lines[5] == "xxx─┼c───┼v");
+  CHECK(lines[6] == "    │    └f");
+  CHECK(lines[7] == "    │    ┌aaa");
+  CHECK(lines[8] == "    └c───┼rr");
+  CHECK(lines[9] == "         └tt");
 };
